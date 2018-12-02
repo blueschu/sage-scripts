@@ -46,7 +46,7 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
             step_area += area
        
         area_text = text(
-            '      Actual area: {}\nApproximated area: :{:1.4f}'.format(actual_area, float(step_area)), 
+            '      Actual area: {}\nApproximated area: {:1.4f}'.format(actual_area, float(step_area)), 
             (0.5,0.1),
             horizontal_alignment='center',
             bounding_box={'boxstyle':'round', 'fc':'w'},
