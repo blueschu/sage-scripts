@@ -29,7 +29,7 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
 
     def box_under_area(start, end, mode = 'left'):
         if mode not in INTEGRATION_MODES:
-            raise InvalidArgument('mode must be left, right, or center, {} recieved'.format(mode))
+            raise ValueError('mode must be left, right, or center, {} recieved'.format(mode))
         height_argument = {'left': start, 'right': end, 'center': (start + end) / 2}[mode]
         height = f(**{variable_name: height_argument})
         points = [(start, 0), (start, height), (end, height), (end,0)]
@@ -57,7 +57,7 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
         frames.append(step_plot + area_text)
     return frames
 
-def main(raw_args):
+def _main(raw_args):
     """CLI entry point."""
 
     def real_interval(string):
@@ -102,4 +102,4 @@ if __name__ == '__main__':
     import argparse
     import sys
 
-    main(sys.argv[1:])
+    _main(sys.argv[1:])
