@@ -2,7 +2,7 @@
 
 from sage.all import *
 
-INTEGRATION_MODES = ('left', 'right', 'center')
+INTEGRATION_MODES = ('left', 'right', 'center', 'trapezoid')
 
 
 def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mode='left'):
@@ -16,7 +16,8 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
     :param integral_interval: The real interval that f is to be integrated over.
     :param step_count: The total number of boxes to be plotted to approximate
         the integral of f. Also the total number of frames to be returned.
-    :param mode: The flavor of riemann sum: left, right, or center. Default: left.
+    :param mode: The flavor of riemann sum: left, right, center, or trapezoid.
+        Default: left.
     """
     frames = []
     try:
@@ -43,15 +44,21 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
 
     def generate_box_with_area(start, end, mode = 'left'):
         """
-        Return sage graphic of the rectangle between f and the x-axis over the
-        interval [start, end].
+        Return 2-tuple of a sage graphic of apolygon between f and the x-axis over the
+        interval [start, end] and the area of said polygon.
         """
         if mode not in INTEGRATION_MODES:
-            raise ValueError('mode must be left, right, or center, {} recieved'.format(mode))
-        height_argument = {'left': start, 'right': end, 'center': (start + end) / 2}[mode]
-        height = f(**{str(variable): height_argument})
-        points = [(start, 0), (start, height), (end, height), (end,0)]
-        return (polygon(points, alpha=0.5, zorder=1), (end - start) * height)
+            raise ValueError('mode must be left, right, center, or trapezoid, {} recieved'.format(mode))
+        if mode == 'trapezoid':
+            start_height = f(**{str(variable): start})
+            end_height = f(**{str(variable): end})
+            area = 0.5 * (start_height + end_height) * (end - start)
+        else:
+            height_argument = {'left': start, 'right': end, 'center': (start + end) / 2}[mode]
+            start_height = end_height = f(**{str(variable): height_argument})
+            area = (end - start) * start_height
+        points = [(start, 0), (start, start_height), (end, end_height), (end, 0)]
+        return (polygon(points, alpha=0.5, zorder=1), area)
 
     for step in range(1, step_count + 1):
         width = integration_width / step
@@ -65,7 +72,7 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
             step_area += area
        
         area_text = text(
-            '      Actual area: {}\nApproximated area: {:1.4f}'.format(actual_area, float(step_area)), 
+            '      Actual area: {}\nApproximated area: {:1.4f}'.format(actual_area, float(step_area)),
             (0.5,0.1),
             horizontal_alignment='center',
             bounding_box={'boxstyle':'round', 'fc':'w'},
