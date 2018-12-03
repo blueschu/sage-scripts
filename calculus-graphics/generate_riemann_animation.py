@@ -9,39 +9,58 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
     """
     Generate an animatable list of sage graphics demonstrating a riemann sum
     approximation of the integral of f.
+
+    :param f: Sage symbolic expression representing a function whose definite
+        integral over the interval integral_interval is to be shown.
+    :param plot_interval: The real interval that f should be plotted over.
+    :param integral_interval: The real interval that f is to be integrated over.
+    :param step_count: The total number of boxes to be plotted to approximate
+        the integral of f. Also the total number of frames to be returned.
+    :param mode: The flavor of riemann sum: left, right, or center. Default: left.
     """
     frames = []
-    a, b = integral_interval
-    # name of the argument to the function f
-    variable_name = str(f.variables()[0])
-    # plot of the function f over in the interval p_all
-    plot_f = plot(f, *plot_interval, zorder=2, legend_label='f({})={}'.format(variable_name, f))
+    try:
+        # Integral interval in the form of (variable, from, to)
+        variable, a, b = integral_interval
+    except ValueError:
+        # Integral interal in the form of (from, to) with the variable being implied
+        a, b = integral_interval
+        variable = f.variables()[0]
+
+    # Plot of the function f over the plot interval
+    plot_f = plot(f, plot_interval, zorder=2, legend_label='f({})={}'.format(variable, f))
     # Add title to the plot of f
     plot_f += text(
-        'Visualization of Riemann Sum Approximation of $\int_{{{0:.1f}}}^{{{1:.1f}}} f({2}) d{2}$'.format(float(a), float(b), variable_name), 
+        'Visualization of Riemann Sum Approximation of'
+        '$\int_{{{0:.1f}}}^{{{1:.1f}}} f({2}) d{2}$'.format(float(a), float(b), variable),
         (0.5,1.05), 
         axis_coords=True, 
         fontsize='large',
         color='black',
     )
     integration_width = b - a
-    actual_area = f.integrate(f.variables()[0], a, b)
+    actual_area = f.integrate(variable, a, b)
 
-    def box_under_area(start, end, mode = 'left'):
+    def generate_box_with_area(start, end, mode = 'left'):
+        """
+        Return sage graphic of the rectangle between f and the x-axis over the
+        interval [start, end].
+        """
         if mode not in INTEGRATION_MODES:
             raise ValueError('mode must be left, right, or center, {} recieved'.format(mode))
         height_argument = {'left': start, 'right': end, 'center': (start + end) / 2}[mode]
-        height = f(**{variable_name: height_argument})
+        height = f(**{str(variable): height_argument})
         points = [(start, 0), (start, height), (end, height), (end,0)]
         return (polygon(points, alpha=0.5, zorder=1), (end - start) * height)
 
     for step in range(1, step_count + 1):
         width = integration_width / step
-        step_plot = plot_f  # begin with just background f
-        step_area = 0
-        
-        for particular in range(1, step + 1):  # add n boxes under f where n = step
-            box, area = box_under_area(a + (particular - 1) * width, a + particular * width, mode=mode)
+        step_plot = plot_f  # Begin the frame with just the plot of f
+        step_area = 0  # Accumulator for the approxiated area under the curve with step rectangles
+
+        # Add n rectangles between f and the x-axis where n = step
+        for particular in range(1, step + 1):
+            box, area = generate_box_with_area(a + (particular - 1) * width, a + particular * width, mode=mode)
             step_plot += box
             step_area += area
        
@@ -56,6 +75,7 @@ def generate_riemann_frames(f, plot_interval, integral_interval, step_count, mod
         )
         frames.append(step_plot + area_text)
     return frames
+
 
 def _main(raw_args):
     """CLI entry point."""
